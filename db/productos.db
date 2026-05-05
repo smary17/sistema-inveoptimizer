@@ -1,0 +1,20 @@
+{"nombre":"Pan Bimbo","categoria":"Panadería","costo":28,"venta":38,"stock":15,"stock_min":5,"_id":"0yK790W1KtLXIpsf"}
+{"nombre":"Sabritas Original","categoria":"Botanas","costo":12,"venta":18,"stock":30,"stock_min":5,"_id":"1xR4R77OzIuTAiNj"}
+{"nombre":"Pepsi 600ml","categoria":"Bebidas","costo":9,"venta":14,"stock":40,"stock_min":10,"_id":"3ksMdpesfH3bhq1n"}
+{"nombre":"Galletas Oreo","categoria":"Galletas","costo":14,"venta":20,"stock":35,"stock_min":8,"_id":"AKIC3Ted2ctmVhS6"}
+{"nombre":"Sopa Instantánea","categoria":"Enlatados","costo":6,"venta":10,"stock":40,"stock_min":10,"_id":"AcjOBahbjUrHuU5c"}
+{"nombre":"Galletas Marías","categoria":"Galletas","costo":10,"venta":15,"stock":40,"stock_min":8,"_id":"BnYS1Vlenkuu53Pj"}
+{"nombre":"Atún Lata","categoria":"Enlatados","costo":10,"venta":16,"stock":35,"stock_min":10,"_id":"EDmoZWdjKg2eCj5Q"}
+{"nombre":"Leche Lala 1L","categoria":"Lácteos","costo":18,"venta":25,"stock":20,"stock_min":5,"_id":"G8iIu0EHfnxwAuBI"}
+{"nombre":"Azúcar 1kg","categoria":"Abarrotes","costo":17,"venta":24,"stock":20,"stock_min":6,"_id":"HG1Ffazr4viGvRav"}
+{"nombre":"Sal 1kg","categoria":"Abarrotes","costo":8,"venta":12,"stock":30,"stock_min":8,"_id":"LkI4sp7PBqSj0sb3"}
+{"nombre":"Jugo del Valle","categoria":"Bebidas","costo":11,"venta":17,"stock":30,"stock_min":8,"_id":"MYwqbza05ihxk8Vd"}
+{"nombre":"Frijol 1kg","categoria":"Abarrotes","costo":18,"venta":26,"stock":25,"stock_min":6,"_id":"PsDFJcDdvTBkWaJU"}
+{"nombre":"Agua 1L","categoria":"Bebidas","costo":7,"venta":12,"stock":50,"stock_min":15,"_id":"Vvn0MOOzVQJLYE12"}
+{"nombre":"Arroz 1kg","categoria":"Abarrotes","costo":16,"venta":22,"stock":25,"stock_min":6,"_id":"dQGYJOr8gycmCsaZ"}
+{"nombre":"Chocolate Carlos V","categoria":"Dulces","costo":9,"venta":14,"stock":45,"stock_min":10,"_id":"fyZL9VjrBpckLrvP"}
+{"nombre":"Coca Cola 600ml","categoria":"Bebidas","costo":10,"venta":15,"stock":50,"stock_min":10,"_id":"kVx71qJWw76b92YV"}
+{"nombre":"Doritos Nacho","categoria":"Botanas","costo":12,"venta":18,"stock":25,"stock_min":5,"_id":"mWHQZTkkyoYaxKwm"}
+{"nombre":"Chicle Trident","categoria":"Dulces","costo":5,"venta":10,"stock":50,"stock_min":15,"_id":"rd1uFVYMXdAaXXIs"}
+{"nombre":"Yogurt Danone","categoria":"Lácteos","costo":8,"venta":12,"stock":30,"stock_min":6,"_id":"tkB18UbUhrumPLsj"}
+{"nombre":"Huevo 12 piezas","categoria":"Abarrotes","costo":30,"venta":42,"stock":20,"stock_min":5,"_id":"yIiskOvw5YpZQomf"}

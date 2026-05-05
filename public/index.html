@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>InveOptimizer</title>
+
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    body {
+      background: linear-gradient(135deg, #fff5e6, #ffe0cc);
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    /* HEADER */
+    .header {
+      background: linear-gradient(90deg, #ff7a18, #ffb347);
+      color: white;
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+
+    .header h1 {
+      margin: 0;
+      font-weight: bold;
+    }
+
+    .empresa {
+      font-size: 14px;
+      opacity: 0.9;
+    }
+
+    /* TARJETAS */
+    .card {
+      border-radius: 15px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+      border: none;
+    }
+
+    /* BOTÓN */
+    .btn-success {
+      background: #ff7a18;
+      border: none;
+    }
+
+    .btn-success:hover {
+      background: #ff944d;
+      transform: scale(1.05);
+    }
+
+    /* TABLA */
+    table {
+      background: white;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    th {
+      background: #ff7a18 !important;
+      color: white;
+      text-align: center;
+    }
+
+    td {
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    /* FOOTER */
+    .footer {
+      text-align: center;
+      padding: 10px;
+      margin-top: 20px;
+      font-size: 12px;
+      color: #555;
+    }
+
+  </style>
+</head>
+
+<body>
+
+  <!-- HEADER -->
+  <div class="header">
+    <h1>📦 InveOptimizer</h1>
+    <p class="empresa">Miscelánea Clarita</p>
+  </div>
+
+  <div class="container mt-4">
+
+    <!-- FORMULARIO -->
+    <div class="card p-4 mb-4">
+      <h4 class="mb-3">Agregar Producto</h4>
+
+      <div class="row">
+        <div class="col-md-4">
+          <input id="nombre" class="form-control mb-2" placeholder="Nombre del producto">
+        </div>
+        <div class="col-md-4">
+          <input id="categoria" class="form-control mb-2" placeholder="Categoría">
+        </div>
+        <div class="col-md-4">
+          <input id="costo" type="number" class="form-control mb-2" placeholder="Costo">
+        </div>
+        <div class="col-md-4">
+          <input id="venta" type="number" class="form-control mb-2" placeholder="Precio de venta">
+        </div>
+        <div class="col-md-4">
+          <input id="stock" type="number" class="form-control mb-2" placeholder="Stock inicial">
+        </div>
+        <div class="col-md-4">
+          <input id="stock_min" type="number" class="form-control mb-2" placeholder="Stock mínimo">
+        </div>
+      </div>
+
+      <button class="btn btn-success w-100 mt-3" onclick="agregarProducto()">
+        ➕ Agregar Producto
+      </button>
+    </div>
+
+    <!-- TABLA -->
+    <div class="card p-4">
+      <h4 class="mb-3">Inventario</h4>
+      <table class="table table-hover" id="tabla"></table>
+    </div>
+
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    © 2026 InveOptimizer | Miscelánea Clarita
+  </div>
+
+  <!-- JS -->
+  <script src="cargarProductos.js"></script>
+  <script src="app.js"></script>
+
+</body>
+</html>
