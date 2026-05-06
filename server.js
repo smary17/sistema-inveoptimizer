@@ -104,49 +104,47 @@ app.get('/productos', (req, res) => {
 });
 
 /* =========================
-   VENTAS
+   VENTAS (CORREGIDO)
 ========================= */
-app.post('/vender', (req, res) => {
+app.put('/vender/:id', (req, res) => {
 
-    const { producto_id, cantidad, inicioTiempo } = req.body;
+    const id = req.params.id;
 
-    productos.findOne({ _id: producto_id }, (err, prod) => {
+    productos.findOne({ _id: id }, (err, prod) => {
+
+        if (err) return res.status(500).send(err);
 
         if (!prod) {
             return res.status(404).send("Producto no encontrado");
         }
 
-        if (prod.stock < cantidad) {
-            return res.status(400).send("Stock insuficiente");
+        if (prod.stock <= 0) {
+            return res.status(400).send("Sin stock");
         }
 
-        const tiempoFinal = Date.now();
-        const tiempoSegundos = (tiempoFinal - inicioTiempo) / 1000;
-
+        // RESTAR 1 AL STOCK
         productos.update(
-            { _id: producto_id },
-            { $inc: { stock: -cantidad } },
+            { _id: id },
+            { $inc: { stock: -1 } },
             {},
-            () => {
+            (err) => {
 
+                if (err) return res.status(500).send(err);
+
+                // REGISTRAR MOVIMIENTO
                 movimientos.insert({
-                    producto_id,
-                    cantidad,
-                    fecha: new Date(),
-                    tiempo_registro_segundos: tiempoSegundos
+                    producto_id: id,
+                    cantidad: 1,
+                    fecha: new Date()
                 });
 
-                res.send({
-                    mensaje: "Venta realizada",
-                    tiempo: tiempoSegundos
-                });
+                res.send("Venta realizada");
             }
         );
 
     });
 
 });
-
 /* =========================
    AUDITORIA
 ========================= */
