@@ -54,11 +54,13 @@ async function cargarProductos() {
                 <td>${p.stock}</td>
                 <td>${estado}</td>
              <td>
-                <button class="btn btn-sm btn-primary"
-                 onclick="vender('${p._id}')">
-                 Vender
-                 </button>
-            </td>
+    <input type="number" min="1" value="1" id="cant-${p._id}" style="width:70px;">
+    
+    <button class="btn btn-sm btn-warning"
+    onclick="vender('${p._id}')">
+    Vender
+    </button>
+</td>
             </tr>`;
         });
 

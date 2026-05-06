@@ -29,8 +29,12 @@ async function agregarProducto() {
 // 👇 AGREGA ESTO AQUÍ
 async function vender(id) {
 
+    const cantidad = document.getElementById(`cant-${id}`).value;
+
     await fetch(`/vender/${id}`, {
-        method: 'PUT'
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cantidad: parseInt(cantidad) })
     });
 
     alert("✅ Venta realizada");

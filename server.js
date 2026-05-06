@@ -104,11 +104,12 @@ app.get('/productos', (req, res) => {
 });
 
 /* =========================
-   VENTAS (CORREGIDO)
+   VENTAS MEJORADAS
 ========================= */
 app.put('/vender/:id', (req, res) => {
 
     const id = req.params.id;
+    const cantidad = req.body.cantidad || 1;
 
     productos.findOne({ _id: id }, (err, prod) => {
 
@@ -118,14 +119,18 @@ app.put('/vender/:id', (req, res) => {
             return res.status(404).send("Producto no encontrado");
         }
 
-        if (prod.stock <= 0) {
-            return res.status(400).send("Sin stock");
+        if (cantidad <= 0) {
+            return res.status(400).send("Cantidad inválida");
         }
 
-        // RESTAR 1 AL STOCK
+        if (prod.stock < cantidad) {
+            return res.status(400).send("Stock insuficiente");
+        }
+
+        // DESCONTAR STOCK
         productos.update(
             { _id: id },
-            { $inc: { stock: -1 } },
+            { $inc: { stock: -cantidad } },
             {},
             (err) => {
 
@@ -134,15 +139,49 @@ app.put('/vender/:id', (req, res) => {
                 // REGISTRAR MOVIMIENTO
                 movimientos.insert({
                     producto_id: id,
-                    cantidad: 1,
+                    tipo: "venta",
+                    cantidad,
                     fecha: new Date()
                 });
 
-                res.send("Venta realizada");
+                res.send("Venta realizada correctamente");
             }
         );
 
     });
+
+});
+/* =========================
+   RESTOCK (REABASTECER)
+========================= */
+app.put('/restock/:id', (req, res) => {
+
+    const id = req.params.id;
+    const cantidad = req.body.cantidad;
+
+    if (!cantidad || cantidad <= 0) {
+        return res.status(400).send("Cantidad inválida");
+    }
+
+    productos.update(
+        { _id: id },
+        { $inc: { stock: cantidad } },
+        {},
+        (err) => {
+
+            if (err) return res.status(500).send(err);
+
+            // REGISTRAR MOVIMIENTO
+            movimientos.insert({
+                producto_id: id,
+                tipo: "entrada",
+                cantidad,
+                fecha: new Date()
+            });
+
+            res.send("Stock actualizado correctamente");
+        }
+    );
 
 });
 /* =========================
