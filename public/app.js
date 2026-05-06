@@ -24,3 +24,16 @@ async function agregarProducto() {
 
     cargarProductos();
 }
+
+
+// 👇 AGREGA ESTO AQUÍ
+async function vender(id) {
+
+    await fetch(`/vender/${id}`, {
+        method: 'PUT'
+    });
+
+    alert("✅ Venta realizada");
+
+    cargarProductos();
+}
