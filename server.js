@@ -185,6 +185,41 @@ app.put('/restock/:id', (req, res) => {
 
 });
 /* =========================
+   GANANCIAS
+========================= */
+app.get('/ganancias', (req, res) => {
+
+    movimientos.find({ tipo: "venta" }, (err, docs) => {
+
+        if (err) {
+            return res.status(500).send(err);
+        }
+
+        let total = 0;
+
+        docs.forEach(m => {
+            total += m.cantidad * 10;
+        });
+
+        res.json({ total });
+    });
+});
+
+/* =========================
+   MOVIMIENTOS
+========================= */
+app.get('/movimientos', (req, res) => {
+
+    movimientos.find({}, (err, docs) => {
+
+        if (err) {
+            return res.status(500).send(err);
+        }
+
+        res.json(docs);
+    });
+});
+/* =========================
    AUDITORIA
 ========================= */
 app.post('/auditoria', (req, res) => {

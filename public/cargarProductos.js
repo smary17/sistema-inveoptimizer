@@ -1,7 +1,7 @@
 async function cargarProductos() {
+
     try {
 
-        // CONSULTAR PRODUCTOS
         const res = await fetch('/productos');
 
         if (!res.ok) {
@@ -10,38 +10,36 @@ async function cargarProductos() {
 
         const data = await res.json();
 
-        // ENCABEZADO TABLA
         let tabla = `
         <tr>
             <th>Producto</th>
             <th>Categoría</th>
             <th>Stock</th>
             <th>Estado</th>
-            <th>Acción</th>
+            <th>Venta</th>
+            <th>Restock</th>
         </tr>`;
 
-        // SI NO HAY DATOS
         if (data.length === 0) {
             tabla += `
             <tr>
-                <td colspan="5">No hay productos registrados</td>
+                <td colspan="6">No hay productos registrados</td>
             </tr>`;
         }
 
-        // RECORRER PRODUCTOS
         data.forEach(p => {
 
             let clase = "";
-            let estado = "";
+            let estado =  "";
 
             if (p.stock === 0) {
                 clase = "table-danger";
-                estado = "❌ Agotado - Resurtir";
-            } 
+                estado = "❌ Agotado";
+            }
             else if (p.stock <= p.stock_min) {
                 clase = "table-warning";
                 estado = "⚠️ Stock bajo";
-            } 
+            }
             else {
                 clase = "table-success";
                 estado = "✅ Disponible";
@@ -49,36 +47,61 @@ async function cargarProductos() {
 
             tabla += `
             <tr class="${clase}">
+
                 <td>${p.nombre}</td>
                 <td>${p.categoria}</td>
                 <td>${p.stock}</td>
-                <td>${estado}</td>
-             <td>
-    <input type="number" min="1" value="1" id="cant-${p._id}" style="width:70px;">
-    
-    <button class="btn btn-sm btn-warning"
-    onclick="vender('${p._id}')">
-    Vender
-    </button>
-</td>
+
+                <td style="font-weight:bold;">
+                    ${estado}
+                </td>
+
+                <td>
+                    <div class="d-flex justify-content-center gap-2">
+
+                        <input
+                        type="number"
+                        min="1"
+                        value="1"
+                          id="cant-${p._id}"
+                        class="form-control"
+                        style="width:80px;">
+
+                        <button
+                        class="btn btn-warning btn-sm"
+                        onclick="vender('${p._id}')">
+                        🛒
+                        </button>
+
+                    </div>
+                </td>
+
+                <td>
+                    <button
+                    class="btn btn-success btn-sm"
+                    onclick="abrirRestock('${p._id}')">
+                    ➕
+                    </button>
+                </td>
+
             </tr>`;
         });
 
-        // MOSTRAR TABLA
         document.getElementById("tabla").innerHTML = tabla;
 
-    } catch (error) {
+    }
+    catch (error) {
 
         console.error(error);
-
-        document.getElementById("tabla").innerHTML = `
+          document.getElementById("tabla").innerHTML = `
         <tr>
-            <td colspan="5">
-                Error al cargar productos
-            </td>
+            <td colspan="6">Error al cargar productos</td>
         </tr>`;
     }
 }
 
-// CARGAR AUTOMÁTICAMENTE AL ABRIR
-window.onload = cargarProductos;
+window.onload = () => {
+    cargarProductos();
+    cargarGanancias();
+    cargarMovimientos();
+};
