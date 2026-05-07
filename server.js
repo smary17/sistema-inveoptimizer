@@ -107,25 +107,17 @@ app.get('/productos', (req, res) => {
    VENTAS MEJORADAS
 ========================= */
 app.put('/vender/:id', (req, res) => {
-
     const id = req.params.id;
     const cantidad = req.body.cantidad || 1;
 
     productos.findOne({ _id: id }, (err, prod) => {
-
         if (err) return res.status(500).send(err);
+        if (!prod) return res.status(404).send("Producto no encontrado");
+        if (cantidad <= 0) return res.status(400).send("Cantidad inválida");
+        if (prod.stock < cantidad) return res.status(400).send("Stock insuficiente");
 
-        if (!prod) {
-            return res.status(404).send("Producto no encontrado");
-        }
-
-        if (cantidad <= 0) {
-            return res.status(400).send("Cantidad inválida");
-        }
-
-        if (prod.stock < cantidad) {
-            return res.status(400).send("Stock insuficiente");
-        }
+        // Calculamos la ganancia real: (Precio Venta - Costo) * Cantidad
+        const gananciaObtenida = (prod.venta - prod.costo) * cantidad;
 
         // DESCONTAR STOCK
         productos.update(
@@ -133,29 +125,28 @@ app.put('/vender/:id', (req, res) => {
             { $inc: { stock: -cantidad } },
             {},
             (err) => {
-
                 if (err) return res.status(500).send(err);
 
-                // REGISTRAR MOVIMIENTO
+                // REGISTRAR MOVIMIENTO CON NOMBRE Y GANANCIA
                 movimientos.insert({
                     producto_id: id,
+                    producto_nombre: prod.nombre, // Guardamos el nombre
                     tipo: "venta",
-                    cantidad,
+                    cantidad: cantidad,
+                    ganancia: gananciaObtenida, // Guardamos la ganancia
                     fecha: new Date()
                 });
 
                 res.send("Venta realizada correctamente");
             }
         );
-
     });
-
 });
+
 /* =========================
    RESTOCK (REABASTECER)
 ========================= */
 app.put('/restock/:id', (req, res) => {
-
     const id = req.params.id;
     const cantidad = req.body.cantidad;
 
@@ -163,42 +154,43 @@ app.put('/restock/:id', (req, res) => {
         return res.status(400).send("Cantidad inválida");
     }
 
-    productos.update(
-        { _id: id },
-        { $inc: { stock: cantidad } },
-        {},
-        (err) => {
+    // Buscamos el producto para registrar su nombre
+    productos.findOne({ _id: id }, (err, prod) => {
+        if (err || !prod) return res.status(404).send("Producto no encontrado");
 
-            if (err) return res.status(500).send(err);
+        productos.update(
+            { _id: id },
+            { $inc: { stock: cantidad } },
+            {},
+            (err) => {
+                if (err) return res.status(500).send(err);
 
-            // REGISTRAR MOVIMIENTO
-            movimientos.insert({
-                producto_id: id,
-                tipo: "entrada",
-                cantidad,
-                fecha: new Date()
-            });
+                // REGISTRAR MOVIMIENTO
+                movimientos.insert({
+                    producto_id: id,
+                    producto_nombre: prod.nombre,
+                    tipo: "entrada",
+                    cantidad: cantidad,
+                    fecha: new Date()
+                });
 
-            res.send("Stock actualizado correctamente");
-        }
-    );
-
+                res.send("Stock actualizado correctamente");
+            }
+        );
+    });
 });
+
 /* =========================
    GANANCIAS
 ========================= */
 app.get('/ganancias', (req, res) => {
-
     movimientos.find({ tipo: "venta" }, (err, docs) => {
-
-        if (err) {
-            return res.status(500).send(err);
-        }
+        if (err) return res.status(500).send(err);
 
         let total = 0;
-
         docs.forEach(m => {
-            total += m.cantidad * 10;
+            // Sumamos la ganancia real calculada en cada venta
+            total += m.ganancia || 0; 
         });
 
         res.json({ total });

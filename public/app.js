@@ -186,6 +186,7 @@ async function cargarGanancias() {
     }
 }
 
+// --- ESTADÍSTICAS Y MOVIMIENTOS ---
 async function cargarMovimientos() {
     try {
         const res = await fetch('/movimientos');
@@ -193,20 +194,30 @@ async function cargarMovimientos() {
 
         let tabla = `
         <tr class="table-dark">
-            <th>Tipo</th>
-            <th>Cantidad</th>
             <th>Fecha</th>
+            <th>Movimiento</th>
+            <th>Producto</th>
+            <th>Cantidad</th>
+            <th>Ganancia</th>
         </tr>`;
 
         if (Array.isArray(data)) {
             data.reverse().forEach(m => {
-                // Darle color distinto a entrada o venta
                 let colorFila = m.tipo === "venta" ? "table-light" : "table-info";
+                let tipoIcono = m.tipo === "venta" ? "🛒 Venta" : "📦 Entrada";
+                
+                // Mostrar en verde la ganancia si es venta, sino poner un guion
+                let gananciaTxt = m.tipo === "venta" 
+                    ? `<span class="text-success fw-bold">+$${m.ganancia || 0}</span>` 
+                    : `<span class="text-secondary">-</span>`;
+                
                 tabla += `
                 <tr class="${colorFila}">
-                    <td>${m.tipo.toUpperCase()}</td>
-                    <td>${m.cantidad}</td>
                     <td>${new Date(m.fecha).toLocaleString()}</td>
+                    <td>${tipoIcono}</td>
+                    <td>${m.producto_nombre || 'Desconocido'}</td>
+                    <td>${m.cantidad}</td>
+                    <td>${gananciaTxt}</td>
                 </tr>`;
             });
         }
