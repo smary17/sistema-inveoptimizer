@@ -1,8 +1,12 @@
 // --- NOTIFICACIONES ---
 function mostrarNotificacion(mensaje, tipo = "success") {
     const div = document.getElementById("notificacion");
-    div.className = `alert alert-${tipo} text-center`;
-    div.innerText = mensaje;
+    // Asignar ícono según el tipo de alerta
+    const icono = tipo === "success" ? "bi-check-circle-fill" : "bi-exclamation-triangle-fill";
+    
+    div.className = `alert alert-${tipo} text-center shadow-sm d-flex align-items-center justify-content-center gap-2`;
+    div.innerHTML = `<i class="bi ${icono}"></i> ${mensaje}`;
+    
     setTimeout(() => {
         div.className = "alert d-none";
     }, 3000);
@@ -21,12 +25,12 @@ async function cargarProductos() {
             <th>Categoría</th>
             <th>Stock</th>
             <th>Estado</th>
-            <th>Venta</th>
+            <th>Vender</th>
             <th>Restock</th>
         </tr>`;
 
         if (data.length === 0) {
-            tabla += `<tr><td colspan="6">No hay productos registrados</td></tr>`;
+            tabla += `<tr><td colspan="6" class="text-muted py-4"><i class="bi bi-inbox fs-4 d-block mb-2"></i> No hay productos registrados</td></tr>`;
         } else {
             data.forEach(p => {
                 let clase = "";
@@ -34,29 +38,33 @@ async function cargarProductos() {
 
                 if (p.stock === 0) {
                     clase = "table-danger";
-                    estado = "❌ Agotado";
+                    estado = '<span class="badge bg-danger"><i class="bi bi-x-circle"></i> Agotado</span>';
                 } else if (p.stock <= p.stock_min) {
                     clase = "table-warning";
-                    estado = "⚠️ Stock bajo";
+                    estado = '<span class="badge bg-warning text-dark"><i class="bi bi-exclamation-triangle"></i> Stock bajo</span>';
                 } else {
-                    clase = "table-success";
-                    estado = "✅ Disponible";
+                    clase = ""; // Dejamos el fondo blanco normal para los disponibles
+                    estado = '<span class="badge bg-success"><i class="bi bi-check-circle"></i> Disponible</span>';
                 }
 
                 tabla += `
                 <tr class="${clase}">
-                    <td>${p.nombre}</td>
-                    <td>${p.categoria}</td>
-                    <td>${p.stock}</td>
-                    <td style="font-weight:bold;">${estado}</td>
+                    <td class="fw-medium">${p.nombre}</td>
+                    <td class="text-muted">${p.categoria}</td>
+                    <td class="fw-bold">${p.stock}</td>
+                    <td>${estado}</td>
                     <td>
                         <div class="d-flex justify-content-center gap-2">
-                            <input type="number" min="1" value="1" id="cant-${p._id}" class="form-control" style="width:80px;">
-                            <button class="btn btn-warning btn-sm" onclick="vender('${p._id}')">🛒</button>
+                            <input type="number" min="1" value="1" id="cant-${p._id}" class="form-control form-control-sm text-center" style="width:60px;">
+                            <button class="btn btn-outline-primary btn-sm" onclick="vender('${p._id}')" title="Vender">
+                                <i class="bi bi-cart-plus"></i>
+                            </button>
                         </div>
                     </td>
                     <td>
-                        <button class="btn btn-success btn-sm" onclick="abrirRestock('${p._id}')">➕</button>
+                        <button class="btn btn-outline-success btn-sm" onclick="abrirRestock('${p._id}')" title="Reabastecer">
+                            <i class="bi bi-plus-lg"></i>
+                        </button>
                     </td>
                 </tr>`;
             });
@@ -64,7 +72,7 @@ async function cargarProductos() {
         document.getElementById("tabla").innerHTML = tabla;
     } catch (error) {
         console.error(error);
-        document.getElementById("tabla").innerHTML = `<tr><td colspan="6">Error al cargar productos</td></tr>`;
+        document.getElementById("tabla").innerHTML = `<tr><td colspan="6" class="text-danger py-3"><i class="bi bi-x-circle"></i> Error al cargar productos</td></tr>`;
     }
 }
 
@@ -79,7 +87,7 @@ async function agregarProducto() {
     };
 
     if (!producto.nombre || producto.stock < 0 || producto.venta < 0 || producto.stock_min < 0 || isNaN(producto.stock)) {
-        mostrarNotificacion("⚠️ Verifica los datos ingresados", "danger");
+        mostrarNotificacion("Verifica los datos ingresados", "danger");
         return;
     }
 
@@ -90,7 +98,7 @@ async function agregarProducto() {
             body: JSON.stringify(producto)
         });
 
-        mostrarNotificacion("✅ Producto agregado correctamente");
+        mostrarNotificacion("Producto agregado correctamente");
         
         // Limpiar formulario
         document.getElementById('nombre').value = "";
@@ -127,7 +135,7 @@ async function vender(id) {
             return;
         }
 
-        mostrarNotificacion("✅ Venta realizada");
+        mostrarNotificacion("Venta realizada");
         cargarProductos();
         cargarGanancias();
         cargarMovimientos();
@@ -160,10 +168,9 @@ async function confirmarRestock() {
             body: JSON.stringify({ cantidad: cantidad })
         });
 
-        mostrarNotificacion("📦 Stock actualizado correctamente");
+        mostrarNotificacion("Stock actualizado correctamente");
         inputCantidad.value = "";
         
-        // Esconder el modal correctamente
         const modalElement = document.getElementById('modalRestock');
         const modalInstance = bootstrap.Modal.getInstance(modalElement);
         if(modalInstance) modalInstance.hide();
@@ -180,20 +187,19 @@ async function cargarGanancias() {
     try {
         const res = await fetch('/ganancias');
         const data = await res.json();
-        document.getElementById("ganancias").innerText = `💰 Ganancia Total: $${data.total}`;
+        document.getElementById("ganancias").innerHTML = `<i class="bi bi-cash-stack"></i> Ganancia Total: $${data.total}`;
     } catch (error) {
         console.error(error);
     }
 }
 
-// --- ESTADÍSTICAS Y MOVIMIENTOS ---
 async function cargarMovimientos() {
     try {
         const res = await fetch('/movimientos');
         const data = await res.json();
 
         let tabla = `
-        <tr class="table-dark">
+        <tr>
             <th>Fecha</th>
             <th>Movimiento</th>
             <th>Producto</th>
@@ -203,19 +209,20 @@ async function cargarMovimientos() {
 
         if (Array.isArray(data)) {
             data.reverse().forEach(m => {
-                let colorFila = m.tipo === "venta" ? "table-light" : "table-info";
-                let tipoIcono = m.tipo === "venta" ? "🛒 Venta" : "📦 Entrada";
+                let esVenta = m.tipo === "venta";
+                let tipoIcono = esVenta 
+                    ? '<span class="text-primary fw-medium"><i class="bi bi-cart-check"></i> Venta</span>' 
+                    : '<span class="text-success fw-medium"><i class="bi bi-box-arrow-in-right"></i> Entrada</span>';
                 
-                // Mostrar en verde la ganancia si es venta, sino poner un guion
-                let gananciaTxt = m.tipo === "venta" 
+                let gananciaTxt = esVenta 
                     ? `<span class="text-success fw-bold">+$${m.ganancia || 0}</span>` 
                     : `<span class="text-secondary">-</span>`;
                 
                 tabla += `
-                <tr class="${colorFila}">
-                    <td>${new Date(m.fecha).toLocaleString()}</td>
+                <tr>
+                    <td class="text-muted small">${new Date(m.fecha).toLocaleString()}</td>
                     <td>${tipoIcono}</td>
-                    <td>${m.producto_nombre || 'Desconocido'}</td>
+                    <td class="fw-medium">${m.producto_nombre || 'Desconocido'}</td>
                     <td>${m.cantidad}</td>
                     <td>${gananciaTxt}</td>
                 </tr>`;
