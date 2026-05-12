@@ -7,8 +7,11 @@ function mostrarNotificacion(mensaje, tipo = "success") {
     div.className = `alert alert-${tipo} text-center shadow-sm d-flex align-items-center justify-content-center gap-2`;
     div.innerHTML = `<i class="bi ${icono}"></i> ${mensaje}`;
     
+    // Remover clase d-none para mostrar
+    div.classList.remove("d-none");
+    
     setTimeout(() => {
-        div.className = "alert d-none";
+        div.classList.add("d-none");
     }, 3000);
 }
 
@@ -26,7 +29,7 @@ async function cargarProductos() {
             <th>Stock</th>
             <th>Estado</th>
             <th>Vender</th>
-            <th>Restock</th>
+            <th>Acciones</th>
         </tr>`;
 
         if (data.length === 0) {
@@ -43,7 +46,7 @@ async function cargarProductos() {
                     clase = "table-warning";
                     estado = '<span class="badge bg-warning text-dark"><i class="bi bi-exclamation-triangle"></i> Stock bajo</span>';
                 } else {
-                    clase = ""; // Dejamos el fondo blanco normal para los disponibles
+                    clase = ""; // Fondo blanco normal para los disponibles
                     estado = '<span class="badge bg-success"><i class="bi bi-check-circle"></i> Disponible</span>';
                 }
 
@@ -62,9 +65,14 @@ async function cargarProductos() {
                         </div>
                     </td>
                     <td>
-                        <button class="btn btn-outline-success btn-sm" onclick="abrirRestock('${p._id}')" title="Reabastecer">
-                            <i class="bi bi-plus-lg"></i>
-                        </button>
+                        <div class="d-flex justify-content-center gap-2">
+                            <button class="btn btn-outline-success btn-sm" onclick="abrirRestock('${p._id}')" title="Reabastecer rápido">
+                                <i class="bi bi-plus-lg"></i>
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm" onclick="abrirEdicion('${p._id}', ${p.costo || 0}, ${p.venta || 0}, ${p.stock})" title="Editar precios y stock">
+                                <i class="bi bi-pencil-square"></i>
+                            </button>
+                        </div>
                     </td>
                 </tr>`;
             });
@@ -86,33 +94,37 @@ async function agregarProducto() {
         stock_min: parseInt(document.getElementById('stock_min').value)
     };
 
-    if (!producto.nombre || producto.stock < 0 || producto.venta < 0 || producto.stock_min < 0 || isNaN(producto.stock)) {
+    if (!producto.nombre || isNaN(producto.costo) || isNaN(producto.venta) || isNaN(producto.stock) || isNaN(producto.stock_min) || producto.stock < 0 || producto.venta < 0 || producto.costo < 0 || producto.stock_min < 0) {
         mostrarNotificacion("Verifica los datos ingresados", "danger");
         return;
     }
 
     try {
-        await fetch('/productos', {
+        const res = await fetch('/productos', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(producto)
         });
 
-        mostrarNotificacion("Producto agregado correctamente");
-        
-        // Limpiar formulario
-        document.getElementById('nombre').value = "";
-        document.getElementById('categoria').value = "";
-        document.getElementById('costo').value = "";
-        document.getElementById('venta').value = "";
-        document.getElementById('stock').value = "";
-        document.getElementById('stock_min').value = "";
+        if(res.ok) {
+            mostrarNotificacion("Producto agregado correctamente");
+            
+            // Limpiar formulario
+            document.getElementById('nombre').value = "";
+            document.getElementById('categoria').value = "";
+            document.getElementById('costo').value = "";
+            document.getElementById('venta').value = "";
+            document.getElementById('stock').value = "";
+            document.getElementById('stock_min').value = "";
 
-        cargarProductos();
-        cargarGanancias();
+            cargarProductos();
+        } else {
+             mostrarNotificacion("Error al agregar producto en el servidor", "danger");
+        }
+        
     } catch (error) {
         console.error(error);
-        mostrarNotificacion("Error al agregar producto", "danger");
+        mostrarNotificacion("Error de red al agregar producto", "danger");
     }
 }
 
@@ -120,6 +132,11 @@ async function agregarProducto() {
 async function vender(id) {
     const inputCantidad = document.getElementById(`cant-${id}`);
     const cantidad = parseInt(inputCantidad.value);
+
+    if (isNaN(cantidad) || cantidad <= 0) {
+        mostrarNotificacion("Cantidad inválida", "danger");
+        return;
+    }
 
     try {
         const res = await fetch(`/vender/${id}`, {
@@ -141,6 +158,7 @@ async function vender(id) {
         cargarMovimientos();
     } catch (error) {
         console.error(error);
+        mostrarNotificacion("Error de red al realizar venta", "danger");
     }
 }
 
@@ -156,29 +174,91 @@ async function confirmarRestock() {
     const inputCantidad = document.getElementById("cantidadRestock");
     const cantidad = parseInt(inputCantidad.value);
 
-    if (!cantidad || cantidad <= 0) {
+    if (isNaN(cantidad) || cantidad <= 0) {
         mostrarNotificacion("Cantidad inválida", "danger");
         return;
     }
 
     try {
-        await fetch(`/restock/${productoRestock}`, {
+        const res = await fetch(`/restock/${productoRestock}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ cantidad: cantidad })
         });
 
-        mostrarNotificacion("Stock actualizado correctamente");
-        inputCantidad.value = "";
-        
-        const modalElement = document.getElementById('modalRestock');
-        const modalInstance = bootstrap.Modal.getInstance(modalElement);
-        if(modalInstance) modalInstance.hide();
+        if(res.ok) {
+            mostrarNotificacion("Stock actualizado correctamente");
+            inputCantidad.value = "";
+            
+            const modalElement = document.getElementById('modalRestock');
+            const modalInstance = bootstrap.Modal.getInstance(modalElement);
+            if(modalInstance) modalInstance.hide();
 
-        cargarProductos();
-        cargarMovimientos();
+            cargarProductos();
+            cargarMovimientos();
+        } else {
+            const msj = await res.text();
+            mostrarNotificacion(msj, "danger");
+        }
+        
     } catch (error) {
         console.error(error);
+        mostrarNotificacion("Error al actualizar stock", "danger");
+    }
+}
+
+// --- EDICIÓN AVANZADA DE PRODUCTOS ---
+let productoEditarId = null;
+
+function abrirEdicion(id, costoActual, ventaActual, stockActual) {
+    productoEditarId = id;
+    
+    // Llenar el modal con los datos actuales
+    document.getElementById("editCosto").value = costoActual;
+    document.getElementById("editVenta").value = ventaActual;
+    document.getElementById("editStock").value = stockActual;
+
+    // Mostrar el modal
+    const modal = new bootstrap.Modal(document.getElementById('modalEditar'));
+    modal.show();
+}
+
+async function guardarEdicion() {
+    const costo = document.getElementById("editCosto").value;
+    const venta = document.getElementById("editVenta").value;
+    const stock = document.getElementById("editStock").value;
+
+    if (costo === "" || venta === "" || stock === "") {
+        mostrarNotificacion("Por favor llena todos los campos", "danger");
+        return;
+    }
+
+    try {
+        const res = await fetch(`/editar-producto/${productoEditarId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                costo: parseFloat(costo), 
+                venta: parseFloat(venta), 
+                stock: parseInt(stock) 
+            })
+        });
+
+        if (res.ok) {
+            mostrarNotificacion("Cambios guardados correctamente");
+            
+            // Cerrar el modal
+            const modalElement = document.getElementById('modalEditar');
+            const modalInstance = bootstrap.Modal.getInstance(modalElement);
+            if(modalInstance) modalInstance.hide();
+
+            cargarProductos(); // Refrescar la tabla para ver los nuevos precios/stock
+        } else {
+             mostrarNotificacion("Error al guardar cambios", "danger");
+        }
+    } catch (error) {
+        console.error("Error al guardar edición:", error);
+        mostrarNotificacion("Error de red al guardar edición", "danger");
     }
 }
 
@@ -186,8 +266,10 @@ async function confirmarRestock() {
 async function cargarGanancias() {
     try {
         const res = await fetch('/ganancias');
-        const data = await res.json();
-        document.getElementById("ganancias").innerHTML = `<i class="bi bi-cash-stack"></i> Ganancia Total: $${data.total}`;
+        if(res.ok){
+             const data = await res.json();
+             document.getElementById("ganancias").innerHTML = `<i class="bi bi-cash-stack"></i> Ganancia Total: $${data.total}`;
+        }
     } catch (error) {
         console.error(error);
     }
@@ -196,6 +278,7 @@ async function cargarGanancias() {
 async function cargarMovimientos() {
     try {
         const res = await fetch('/movimientos');
+        if(!res.ok) return;
         const data = await res.json();
 
         let tabla = `
@@ -251,4 +334,4 @@ window.onload = () => {
     cargarProductos();
     cargarGanancias();
     cargarMovimientos();
-};
+}

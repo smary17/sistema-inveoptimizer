@@ -55,17 +55,13 @@ const productosIniciales = [
    CARGAR PRODUCTOS AUTOMÁTICAMENTE
 ========================= */
 productos.count({}, (err, total) => {
-
     if (err) {
         console.log(err);
         return;
     }
-
     if (total === 0) {
         productos.insert(productosIniciales, (err, docs) => {
-            if (!err) {
-                console.log("✅ 20 productos piloto cargados");
-            }
+            if (!err) console.log("✅ 20 productos piloto cargados");
         });
     } else {
         console.log("📦 Ya existen productos en la base");
@@ -76,15 +72,12 @@ productos.count({}, (err, total) => {
    CRUD PRODUCTOS
 ========================= */
 
-// AGREGAR
+// AGREGAR NUEVO
 app.post('/productos', (req, res) => {
-
     const { nombre, categoria, costo, venta, stock, stock_min } = req.body;
-
     if (!nombre || costo < 0 || venta < 0 || stock < 0) {
         return res.status(400).send("Datos inválidos");
     }
-
     productos.insert(req.body, (err, doc) => {
         if (err) return res.status(500).send(err);
         res.send(doc);
@@ -93,18 +86,15 @@ app.post('/productos', (req, res) => {
 
 // MOSTRAR TODOS
 app.get('/productos', (req, res) => {
-
     productos.find({}, (err, docs) => {
         if (err) return res.status(500).send(err);
-
         docs.sort((a, b) => a.nombre.localeCompare(b.nombre));
         res.json(docs);
     });
-
 });
 
 /* =========================
-   VENTAS MEJORADAS
+   VENTAS (DESCUENTO DE STOCK Y GANANCIA)
 ========================= */
 app.put('/vender/:id', (req, res) => {
     const id = req.params.id;
@@ -116,10 +106,9 @@ app.put('/vender/:id', (req, res) => {
         if (cantidad <= 0) return res.status(400).send("Cantidad inválida");
         if (prod.stock < cantidad) return res.status(400).send("Stock insuficiente");
 
-        // Calculamos la ganancia real: (Precio Venta - Costo) * Cantidad
+        // Cálculo de ganancia: (Venta - Costo) * Cantidad
         const gananciaObtenida = (prod.venta - prod.costo) * cantidad;
 
-        // DESCONTAR STOCK
         productos.update(
             { _id: id },
             { $inc: { stock: -cantidad } },
@@ -127,13 +116,12 @@ app.put('/vender/:id', (req, res) => {
             (err) => {
                 if (err) return res.status(500).send(err);
 
-                // REGISTRAR MOVIMIENTO CON NOMBRE Y GANANCIA
                 movimientos.insert({
                     producto_id: id,
-                    producto_nombre: prod.nombre, // Guardamos el nombre
+                    producto_nombre: prod.nombre,
                     tipo: "venta",
                     cantidad: cantidad,
-                    ganancia: gananciaObtenida, // Guardamos la ganancia
+                    ganancia: gananciaObtenida,
                     fecha: new Date()
                 });
 
@@ -144,17 +132,14 @@ app.put('/vender/:id', (req, res) => {
 });
 
 /* =========================
-   RESTOCK (REABASTECER)
+   RESTOCK RÁPIDO (ENTRADA)
 ========================= */
 app.put('/restock/:id', (req, res) => {
     const id = req.params.id;
     const cantidad = req.body.cantidad;
 
-    if (!cantidad || cantidad <= 0) {
-        return res.status(400).send("Cantidad inválida");
-    }
+    if (!cantidad || cantidad <= 0) return res.status(400).send("Cantidad inválida");
 
-    // Buscamos el producto para registrar su nombre
     productos.findOne({ _id: id }, (err, prod) => {
         if (err || !prod) return res.status(404).send("Producto no encontrado");
 
@@ -165,7 +150,6 @@ app.put('/restock/:id', (req, res) => {
             (err) => {
                 if (err) return res.status(500).send(err);
 
-                // REGISTRAR MOVIMIENTO
                 movimientos.insert({
                     producto_id: id,
                     producto_nombre: prod.nombre,
@@ -181,54 +165,65 @@ app.put('/restock/:id', (req, res) => {
 });
 
 /* =========================
-   GANANCIAS
+   EDITAR PRODUCTO (PRECIOS Y STOCK MANUAL)
 ========================= */
+app.put('/editar-producto/:id', (req, res) => {
+    const id = req.params.id;
+    const { costo, venta, stock } = req.body;
+
+    productos.update(
+        { _id: id },
+        { 
+            $set: { 
+                costo: parseFloat(costo), 
+                venta: parseFloat(venta),
+                stock: parseInt(stock)
+            } 
+        },
+        {},
+        (err) => {
+            if (err) return res.status(500).send(err);
+            res.send("Producto actualizado correctamente");
+        }
+    );
+});
+
+/* =========================
+   ESTADÍSTICAS Y REPORTES
+========================= */
+
+// OBTENER GANANCIA TOTAL
 app.get('/ganancias', (req, res) => {
     movimientos.find({ tipo: "venta" }, (err, docs) => {
         if (err) return res.status(500).send(err);
-
-        let total = 0;
-        docs.forEach(m => {
-            // Sumamos la ganancia real calculada en cada venta
-            total += m.ganancia || 0; 
-        });
-
-        res.json({ total });
+        let total = docs.reduce((acc, m) => acc + (m.ganancia || 0), 0);
+        res.json({ total: total.toFixed(2) });
     });
 });
 
-/* =========================
-   MOVIMIENTOS
-========================= */
+// OBTENER HISTORIAL DE MOVIMIENTOS
 app.get('/movimientos', (req, res) => {
-
     movimientos.find({}, (err, docs) => {
-
-        if (err) {
-            return res.status(500).send(err);
-        }
-
+        if (err) return res.status(500).send(err);
         res.json(docs);
     });
 });
+
 /* =========================
-   AUDITORIA
+   AUDITORIA (Mermas y Diferencias)
 ========================= */
 app.post('/auditoria', (req, res) => {
-
     const { producto_id, stock_fisico } = req.body;
 
     productos.findOne({ _id: producto_id }, (err, prod) => {
-
-        if (!prod) {
-            return res.status(404).send("Producto no encontrado");
-        }
+        if (!prod) return res.status(404).send("Producto no encontrado");
 
         const diferencia = prod.stock - stock_fisico;
-        const merma = (diferencia / prod.stock) * 100;
+        const merma = prod.stock > 0 ? (diferencia / prod.stock) * 100 : 0;
 
         auditoria.insert({
             producto_id,
+            producto_nombre: prod.nombre,
             stock_sistema: prod.stock,
             stock_fisico,
             diferencia,
@@ -236,20 +231,14 @@ app.post('/auditoria', (req, res) => {
             fecha: new Date()
         });
 
-        res.send({
-            diferencia,
-            merma
-        });
-
+        res.send({ diferencia, merma });
     });
-
 });
 
 /* =========================
    SERVIDOR
 ========================= */
 const PORT = process.env.PORT || 3000;
-
 app.listen(PORT, () => {
-    console.log("Servidor corriendo en puerto " + PORT);
+    console.log("🚀 InveOptimizer corriendo en puerto " + PORT);
 });
